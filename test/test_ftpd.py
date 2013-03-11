@@ -59,13 +59,13 @@ try:
 except ImportError:
     sendfile = None
 
-import pyftpdlib.__main__
+import pyftpdlib
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.handlers import FTPHandler, DTPHandler, SUPPORTS_HYBRID_IPV6
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
-from pyftpdlib._compat import PY3, u, b, getcwdu, callable
+from pyftpdlib._compat import PY3, u, b, getcwdu
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -194,7 +194,7 @@ def cleanup():
     """Cleanup function executed on interpreter exit."""
     remove_test_files()
     map = IOLoop.instance().socket_map
-    for x in list(map.values()):
+    for x in map.values():
         try:
             sys.stderr.write("garbage: %s\n" % repr(x))
             x.close()
@@ -286,7 +286,7 @@ class FTPd(threading.Thread):
 
 class TestCase(unittest.TestCase):
 
-    # compatibility with python < 3.1
+    # compatibility with python < 2.7
     if not hasattr(unittest.TestCase, 'assertIn'):
         def assertIn(self, member, container, msg=None):
             if member not in container:
@@ -296,10 +296,10 @@ class TestCase(unittest.TestCase):
             if member in container:
                 self.fail(msg or '%r not found in %r' % (member, container))
 
-    # compatibility with python < 2.7 / 3.2
-    if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
-        def assertRaisesRegex(self, expected_exception, expected_regexp,
-                              callable_obj, *args, **kwargs):
+    # compatibility with python < 2.7
+    if not hasattr(unittest.TestCase, 'assertRaisesRegexp'):
+        def assertRaisesRegexp(self, expected_exception, expected_regexp,
+                               callable_obj, *args, **kwargs):
             try:
                 callable_obj(*args, **kwargs)
             except expected_exception:
@@ -328,7 +328,7 @@ class TestAbstractedFS(TestCase):
 
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
-        ae = self.assertEqual
+        ae = self.assertEquals
         fs = AbstractedFS(u('/'), None)
 
         fs._cwd = u('/')
@@ -360,7 +360,7 @@ class TestAbstractedFS(TestCase):
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
-        ae = self.assertEqual
+        ae = self.assertEquals
         fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
@@ -408,7 +408,7 @@ class TestAbstractedFS(TestCase):
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
-        ae = self.assertEqual
+        ae = self.assertEquals
         fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
@@ -456,7 +456,7 @@ class TestAbstractedFS(TestCase):
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
-        ae = self.assertEqual
+        ae = self.assertEquals
         fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
@@ -574,33 +574,33 @@ class TestDummyAuthorizer(TestCase):
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
-        self.assertRaisesRegex(ValueError,
-                               'no such directory',
-                               auth.add_user, USER, PASSWD, '?:\\')
-        self.assertRaisesRegex(ValueError,
-                               'no such directory',
-                               auth.add_anonymous, '?:\\')
+        self.assertRaisesRegexp(ValueError,
+                                'no such directory',
+                                auth.add_user, USER, PASSWD, '?:\\')
+        self.assertRaisesRegexp(ValueError,
+                                'no such directory',
+                                auth.add_anonymous, '?:\\')
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
-        self.assertRaisesRegex(ValueError,
-                               'user %r already exists' % USER,
-                               auth.add_user, USER, PASSWD, HOME)
-        self.assertRaisesRegex(ValueError,
-                               "user 'anonymous' already exists",
-                               auth.add_anonymous, HOME)
+        self.assertRaisesRegexp(ValueError,
+                                'user %r already exists' % USER,
+                                auth.add_user, USER, PASSWD, HOME)
+        self.assertRaisesRegexp(ValueError,
+                                "user 'anonymous' already exists",
+                                auth.add_anonymous, HOME)
         auth.remove_user(USER)
         auth.remove_user('anonymous')
         # raise on wrong permission
-        self.assertRaisesRegex(ValueError,
-                               "no such permission",
-                               auth.add_user, USER, PASSWD, HOME, perm='?')
-        self.assertRaisesRegex(ValueError,
-                               "no such permission",
-                               auth.add_anonymous, HOME, perm='?')
+        self.assertRaisesRegexp(ValueError,
+                                "no such permission",
+                                auth.add_user, USER, PASSWD, HOME, perm='?')
+        self.assertRaisesRegexp(ValueError,
+                                "no such permission",
+                                auth.add_anonymous, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
-            self.assertRaisesRegex(RuntimeWarning,
+            self.assertRaisesRegexp(RuntimeWarning,
                                 "write permissions assigned to anonymous user.",
                                 auth.add_anonymous, HOME, perm=x)
 
@@ -610,32 +610,32 @@ class TestDummyAuthorizer(TestCase):
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
         # raise exc if path does not exist or it's not a directory
-        self.assertRaisesRegex(ValueError,
-                               'no such directory',
-                               auth.override_perm, USER, '?:\\', 'elr')
-        self.assertRaisesRegex(ValueError,
-                               'no such directory',
-                               auth.override_perm, USER, self.tempfile, 'elr')
+        self.assertRaisesRegexp(ValueError,
+                                'no such directory',
+                                auth.override_perm, USER, '?:\\', 'elr')
+        self.assertRaisesRegexp(ValueError,
+                                'no such directory',
+                                auth.override_perm, USER, self.tempfile, 'elr')
         # raise on wrong permission
-        self.assertRaisesRegex(ValueError,
-                               "no such permission", auth.override_perm,
-                               USER, HOME, perm='?')
+        self.assertRaisesRegexp(ValueError,
+                                "no such permission", auth.override_perm,
+                                USER, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         auth.add_anonymous(HOME)
         for p in "adfmw":
-            self.assertRaisesRegex(RuntimeWarning,
+            self.assertRaisesRegexp(RuntimeWarning,
                                 "write permissions assigned to anonymous user.",
                                 auth.override_perm, 'anonymous', HOME, p)
         # raise on attempt to override home directory permissions
-        self.assertRaisesRegex(ValueError,
+        self.assertRaisesRegexp(ValueError,
                                 "can't override home directory permissions",
                                 auth.override_perm, USER, HOME, perm='w')
         # raise on attempt to override a path escaping home directory
         if os.path.dirname(HOME) != HOME:
-            self.assertRaisesRegex(ValueError,
-                                   "path escapes user home directory",
-                                   auth.override_perm, USER,
-                                   os.path.dirname(HOME), perm='w')
+            self.assertRaisesRegexp(ValueError,
+                                    "path escapes user home directory",
+                                    auth.override_perm, USER,
+                                    os.path.dirname(HOME), perm='w')
         # try to re-set an overridden permission
         auth.override_perm(USER, self.tempdir, perm='w')
         auth.override_perm(USER, self.tempdir, perm='wr')
@@ -852,8 +852,8 @@ class TestFtpAuthentication(TestCase):
         os.remove(TESTFN)
 
     def assert_auth_failed(self, user, passwd):
-        self.assertRaisesRegex(ftplib.error_perm, '530 Authentication failed',
-                               self.client.login, user, passwd)
+        self.assertRaisesRegexp(ftplib.error_perm, '530 Authentication failed',
+                                self.client.login, user, passwd)
 
     def test_auth_ok(self):
         self.client.login(user=USER, passwd=PASSWD)
@@ -869,12 +869,12 @@ class TestFtpAuthentication(TestCase):
         self.assert_auth_failed('wrong', 'wrong')
 
     def test_wrong_cmds_order(self):
-        self.assertRaisesRegex(ftplib.error_perm, '503 Login with USER first',
-                               self.client.sendcmd, 'pass ' + PASSWD)
+        self.assertRaisesRegexp(ftplib.error_perm, '503 Login with USER first',
+                                self.client.sendcmd, 'pass ' + PASSWD)
         self.client.login(user=USER, passwd=PASSWD)
-        self.assertRaisesRegex(ftplib.error_perm,
-                               "503 User already authenticated.",
-                               self.client.sendcmd, 'pass ' + PASSWD)
+        self.assertRaisesRegexp(ftplib.error_perm,
+                                "503 User already authenticated.",
+                                self.client.sendcmd, 'pass ' + PASSWD)
 
     def test_max_auth(self):
         self.assert_auth_failed(USER, 'wrong')
@@ -892,9 +892,9 @@ class TestFtpAuthentication(TestCase):
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('rein')
         # user not authenticated, error response expected
-        self.assertRaisesRegex(ftplib.error_perm,
-                               '530 Log in with USER and PASS first',
-                               self.client.sendcmd, 'pwd')
+        self.assertRaisesRegexp(ftplib.error_perm,
+                                '530 Log in with USER and PASS first',
+                                self.client.sendcmd, 'pwd')
         # by logging-in again we should be able to execute a
         # file-system command
         self.client.login(user=USER, passwd=PASSWD)
@@ -922,16 +922,16 @@ class TestFtpAuthentication(TestCase):
                 rein_sent = True
                 # flush account, error response expected
                 self.client.sendcmd('rein')
-                self.assertRaisesRegex(ftplib.error_perm,
-                                       '530 Log in with USER and PASS first',
-                                       self.client.dir)
+                self.assertRaisesRegexp(ftplib.error_perm,
+                                        '530 Log in with USER and PASS first',
+                                        self.client.dir)
 
         # a 226 response is expected once tranfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
-        self.assertRaisesRegex(ftplib.error_perm,
-                               '530 Log in with USER and PASS first',
-                               self.client.sendcmd, 'size ' + TESTFN)
+        self.assertRaisesRegexp(ftplib.error_perm,
+                                '530 Log in with USER and PASS first',
+                                self.client.sendcmd, 'size ' + TESTFN)
         # by logging-in again we should be able to execute a
         # filesystem command
         self.client.login(user=USER, passwd=PASSWD)
@@ -945,9 +945,9 @@ class TestFtpAuthentication(TestCase):
         # is in progress.
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('user ' + USER)  # authentication flushed
-        self.assertRaisesRegex(ftplib.error_perm,
-                               '530 Log in with USER and PASS first',
-                               self.client.sendcmd, 'pwd')
+        self.assertRaisesRegexp(ftplib.error_perm,
+                                '530 Log in with USER and PASS first',
+                                self.client.sendcmd, 'pwd')
         self.client.sendcmd('pass ' + PASSWD)
         self.client.sendcmd('pwd')
 
@@ -974,16 +974,16 @@ class TestFtpAuthentication(TestCase):
                 rein_sent = True
                 # flush account, expect an error response
                 self.client.sendcmd('user ' + USER)
-                self.assertRaisesRegex(ftplib.error_perm,
-                                       '530 Log in with USER and PASS first',
-                                       self.client.dir)
+                self.assertRaisesRegexp(ftplib.error_perm,
+                                        '530 Log in with USER and PASS first',
+                                        self.client.dir)
 
         # a 226 response is expected once transfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
-        self.assertRaisesRegex(ftplib.error_perm,
-                               '530 Log in with USER and PASS first',
-                               self.client.sendcmd, 'pwd')
+        self.assertRaisesRegexp(ftplib.error_perm,
+                                '530 Log in with USER and PASS first',
+                                self.client.sendcmd, 'pwd')
         # by logging-in again we should be able to execute a
         # filesystem command
         self.client.sendcmd('pass ' + PASSWD)
@@ -1070,8 +1070,8 @@ class TestFtpDummyCmds(TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10.1')
         # REST is not supposed to be allowed in ASCII mode
         self.client.sendcmd('type a')
-        self.assertRaisesRegex(ftplib.error_perm, 'not allowed in ASCII mode',
-                               self.client.sendcmd, 'rest 10')
+        self.assertRaisesRegexp(ftplib.error_perm, 'not allowed in ASCII mode',
+                                self.client.sendcmd, 'rest 10')
 
     def test_feat(self):
         resp = self.client.sendcmd('feat')
@@ -1162,8 +1162,8 @@ class TestFtpCmdsSemantic(TestCase):
             self.client.sendcmd(cmd)
         # STAT provided with an argument is equal to LIST hence not allowed
         # if not authenticated
-        self.assertRaisesRegex(ftplib.error_perm, '530 Log in with USER',
-                               self.client.sendcmd, 'stat /')
+        self.assertRaisesRegexp(ftplib.error_perm, '530 Log in with USER',
+                                self.client.sendcmd, 'stat /')
         self.client.sendcmd('quit')
 
 
@@ -1239,8 +1239,8 @@ class TestFtpFsOperations(TestCase):
         self.client.rmd(self.tempdir)
         self.assertRaises(ftplib.error_perm, self.client.rmd, self.tempfile)
         # make sure we can't remove the root directory
-        self.assertRaisesRegex(ftplib.error_perm, "Can't remove root directory",
-                               self.client.rmd, u('/'))
+        self.assertRaisesRegexp(ftplib.error_perm, "Can't remove root directory",
+                                self.client.rmd, u('/'))
 
     def test_dele(self):
         self.client.delete(self.tempfile)
@@ -1264,8 +1264,8 @@ class TestFtpFsOperations(TestCase):
                           'rnto ' + self.tempfile)
 
         # make sure we can't rename root directory
-        self.assertRaisesRegex(ftplib.error_perm, "Can't rename home directory",
-                               self.client.rename, '/', '/x')
+        self.assertRaisesRegexp(ftplib.error_perm, "Can't rename home directory",
+                                self.client.rename, '/', '/x')
 
     def test_mdtm(self):
         self.client.sendcmd('mdtm ' + self.tempfile)
@@ -1296,7 +1296,7 @@ class TestFtpFsOperations(TestCase):
             _getmtime = AbstractedFS.getmtime
             try:
                 AbstractedFS.getmtime = lambda x, y: -9000000000
-                self.assertRaisesRegex(ftplib.error_perm,
+                self.assertRaisesRegexp(ftplib.error_perm,
                             "550 Can't determine file's last modification time",
                             self.client.sendcmd, 'mdtm ' + self.tempfile)
                 # make sure client hasn't been disconnected
@@ -1525,8 +1525,8 @@ class TestFtpStoreData(TestCase):
         # Watch for STOU preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        self.assertRaisesRegex(ftplib.error_temp, "Can't STOU while REST",
-                               self.client.sendcmd, 'stou')
+        self.assertRaisesRegexp(ftplib.error_temp, "Can't STOU while REST",
+                                self.client.sendcmd, 'stou')
 
     def test_stou_orphaned_file(self):
         # Check that no orphaned file gets left behind when STOU fails.
@@ -1575,7 +1575,7 @@ class TestFtpStoreData(TestCase):
         # Watch for APPE preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        self.assertRaisesRegex(ftplib.error_temp, "Can't APPE while REST",
+        self.assertRaisesRegexp(ftplib.error_temp, "Can't APPE while REST",
                                     self.client.sendcmd, 'appe x')
 
     def test_rest_on_stor(self):
@@ -3033,16 +3033,13 @@ class TestIPv6MixedEnvironment(TestCase):
         sock.settimeout(2)
         ip, port =  sock.getsockname()[:2]
         self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
-        sock2 = None
         try:
             try:
-                sock2, addr = sock.accept()
+                sock.accept()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
         finally:
             sock.close()
-            if sock2 is not None:
-                sock2.close()
 
     def test_epsv_v4(self):
         mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
@@ -3385,7 +3382,7 @@ class TestCommandLineParser(TestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         self.original_ftpserver_class = FTPServer
-        pyftpdlib.__main__.FTPServer = DummyFTPServer
+        pyftpdlib.servers.FTPServer = DummyFTPServer
 
     def tearDown(self):
         self.devnull.close()
@@ -3396,33 +3393,33 @@ class TestCommandLineParser(TestCase):
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
-        pyftpdlib.__main__.main()
+        pyftpdlib.main()
         sys.argv = self.SYSARGV[:]
 
         # no argument
         sys.argv += ["-a"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_p_option(self):
         sys.argv += ["-p", "0"]
-        pyftpdlib.__main__.main()
+        pyftpdlib.main()
 
         # no argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-p"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # invalid argument
         sys.argv += ["-p foo"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_w_option(self):
         sys.argv += ["-w", "-p", "0"]
         warnings.filterwarnings("error")
         try:
-            self.assertRaises(RuntimeWarning, pyftpdlib.__main__.main)
+            self.assertRaises(RuntimeWarning, pyftpdlib.main)
         finally:
             warnings.resetwarnings()
 
@@ -3430,49 +3427,49 @@ class TestCommandLineParser(TestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-w foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_d_option(self):
         sys.argv += ["-d", TESTFN, "-p", "0"]
         safe_mkdir(TESTFN)
-        pyftpdlib.__main__.main()
+        pyftpdlib.main()
 
         # without argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # no such directory
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d %s" % TESTFN]
         safe_rmdir(TESTFN)
-        self.assertRaises(ValueError, pyftpdlib.__main__.main)
+        self.assertRaises(ValueError, pyftpdlib.main)
 
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]
-        pyftpdlib.__main__.main()
+        pyftpdlib.main()
 
         # without arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # wrong arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r yyy-zzz"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_v_option(self):
         sys.argv += ["-v"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-v foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -3523,10 +3520,9 @@ def test_main(tests=None):
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     try:
-        result = unittest.TextTestRunner(verbosity=2).run(test_suite)
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
     finally:
         cleanup()
-    return result
 
 if __name__ == '__main__':
-    sys.exit(not test_main().wasSuccessful())
+    test_main()
